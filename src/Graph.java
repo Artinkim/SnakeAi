@@ -7,24 +7,28 @@ import javax.swing.JPanel;
 
 public class Graph {
 	ArrayList<Double> arr = new ArrayList<Double>();
-	public int height;
-	public int width;
-	public double max = 0;
+	private int height;
+	private int width;
+	private double max = 0;
 	Panel panel;
 
 	Graph(int height, int width) {
 		this.height = height;
 		this.width = width;
-		Frame frame = new Frame();
+		JFrame frame = new JFrame();
+		frame.setSize(width, height);
+		frame.setVisible(true);
 		panel = new Panel();
 		frame.add(panel);
 	}
-
-	class Frame extends JFrame {
-		Frame() {
-			this.setSize(width, height);
-			this.setVisible(true);
-		}
+	Graph(int height, int width, String name) {
+		this.height = height;
+		this.width = width;
+		JFrame frame = new JFrame(name);
+		frame.setSize(width, height);
+		frame.setVisible(true);
+		panel = new Panel();
+		frame.add(panel);
 	}
 
 	void addValue(double d) {

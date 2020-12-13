@@ -39,6 +39,7 @@ public class Graph {
 	class Panel extends JPanel {
 		@Override
 		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
 			if (arr.size() > 1) {
 				g.setColor(new Color(255, 0, 0));
 				for (int i = 0; i < arr.size() - 1; i++) {

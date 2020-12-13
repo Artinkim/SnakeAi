@@ -53,7 +53,7 @@ public class Game {
 	final int layer2 = 10;
 	final int layer3 = 8;
 	final int layer4 = 4;
-
+	final boolean TRAIN = false, Display = false;
 	void initView() { // Initializes JFrames
 		graphAvg = new Graph(width, height, "graphAvg");
 		graphTop = new Graph(width, height, "graphTop");
@@ -82,43 +82,52 @@ public class Game {
 		setWeights(); // Reads file and sets weights
 //		initRandomWieghts(); // Sets weights randomly
 		while (true) {
-			while (snakeCount < GENERATION_SIZE) { // Run all snakes
+			while (snakeCount < GENERATION_SIZE) {
+				// Run all snakes
+				if (scoreFood > (X * Y) - 40) {
+					
+					try {
+						Thread.sleep(10);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} else {
+					try {
+						Thread.sleep(0);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 				update();
-//				if (scoreFood > (X * Y) - 10) {
-//					try {
-//						Thread.sleep(50);
-//					} catch (InterruptedException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-//					gamePanel.repaint();
-//				}
+				gamePanel.repaint();
 			}
 			System.out.println(generationCount);
 			calculateFitnessSums(); // Calculate Fitnesses Sums array and find the snake who got the highest score
 			System.out.println(
-					"Best Snake Eaten: " + ((double) topFood / ((double) X * (double) Y)) * 100 + "% of the food \n");
-//			if (topFood > (X * Y) - 3) { //If snake beat game show snake play (snakeCount is already set to best snake in calculateFitnessSums
-//				while (topIndex == snakeCount) {
-//					update();
-//					if (scoreFood > (X * Y) - 10) {
-//						try {
-//							Thread.sleep(50);
-//						} catch (InterruptedException e) {
-//							// TODO Auto-generated catch block
-//							e.printStackTrace();
-//						}
-//					} else {
-//						try {
-//							Thread.sleep(1);
-//						} catch (InterruptedException e) {
-//							// TODO Auto-generated catch block
-//							e.printStackTrace();
-//						}
-//					}
-//					
-//				}
-//			}
+					"Best Snake Ate: " + ((double) topFood / ((double) X * (double) Y)) * 100+0.5 + "% of the food \n");
+			if (topFood > (X * Y) - 3) { //If snake beat game show snake play (snakeCount is already set to best snake in calculateFitnessSums
+				while (topIndex == snakeCount) {
+					update();
+					if (scoreFood > (X * Y) - 400) {
+						try {
+							Thread.sleep(50);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					} else {
+						try {
+							Thread.sleep(1);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+					gamePanel.repaint();
+				}
+			}
 //			if(topFood >= (X*Y)-2) {
 //				System.out.println(topIndex);
 //				break;
@@ -126,14 +135,14 @@ public class Game {
 			nextGeneration(); // Calculate weights for the next generation and store them into weights2
 			// System.out.println(weights + " " + weights2);
 			weights = weights2.clone();
-			if (generationCount % 10 == 0) { // Every 10 generations write weights to file
+			if (generationCount % 10 == 0) { // Every 50 generations write weights to file
 				writeWeights();
 				System.out.println("Weights Written to file");
 			}
 			snakeCount = 0;
 			topFood = 0;
 			generationCount++;
-			if (generationCount > 10) { // Stops after certain number of generations
+			if (generationCount > 3000) { // Stops after certain number of generations and writes to file
 				writeWeights();
 				System.out.println("Done");
 				break;
@@ -180,10 +189,10 @@ public class Game {
 		snakeCount = topIndex;
 		System.out.println("Highest Fitness: " + topFitness + "\n");
 		System.out.println("Average Fitness: " + fitnessSums[GENERATION_SIZE] / GENERATION_SIZE + "\n");
-		graphTop.addValue(topFitness); // Adds values of top and average fitness to graphs
+//		graphTop.addValue(topFitness); // Adds values of top and average fitness to graphs
 		graphAvg.addValue(fitnessSums[GENERATION_SIZE] / GENERATION_SIZE);
 		graphAvg.panel.repaint();
-		graphTop.panel.repaint();
+//		graphTop.panel.repaint();
 	}
 
 	void writeWeights() throws IOException { // Writes weights2 to file
@@ -275,7 +284,7 @@ public class Game {
 			index = rand.nextInt(4);
 		}
 		snake.update(index);
-		if (scoreMove - lastFoodStep > X * Y) {
+		if (scoreMove - lastFoodStep > X * Y || scoreFood > (X * Y) - 3) {//If going in loop or completed game
 			dead();
 		}
 	}
@@ -317,20 +326,23 @@ public class Game {
 	class GamePanel extends JPanel {
 		@Override
 		public void paintComponent(Graphics g) { // Calls draw of food and snake
-			g.setColor(new Color(0, 255, 0));
-			food.draw(g);
+			super.paintComponent(g);
 			g.setColor(new Color(255, 0, 0));
 			snake.draw(g);
+			g.setColor(new Color(0, 255, 0));
+			food.draw(g);
+
 		}
 	}
 
 	public class Snake {
-		ArrayList<Pair> snakeParts = new ArrayList<Pair>();
+		ArrayList<Pair> snakeParts;
 		int direction = 1;
 		int headIndex = 1;
 		int tailIndex = 0;
 
 		Snake() { // Creates the snake with a head and tail at the center of the screen
+			snakeParts = new ArrayList<Pair>();
 			snakeParts.add(new Pair(X / 2, Y / 2));
 			snakeParts.add(new Pair((X / 2) - 1, Y / 2));
 			taken[X / 2][Y / 2] = true;
@@ -346,14 +358,16 @@ public class Game {
 					|| (head.y + dy[direction] < 0 || head.y + dy[direction] > Y - 1)) {
 				dead();
 				return;
-			} else if (taken[head.x + dx[direction]][head.y + dy[direction]]) { // Checks if ran into self
+			} 
+			if (taken[head.x + dx[direction]][head.y + dy[direction]]) { // Checks if ran into self
 				dead();
 				return;
 			}
+			taken[head.x][head.y] = true;
 			if (head.x == food.x && head.y == food.y) { // Snake eats food
 				scoreFood++;
-				snakeParts.add(tailIndex, new Pair(head.x + dx[direction], head.y + dy[direction]));
 				food.eaten();
+				snakeParts.add(tailIndex, new Pair(head.x + dx[direction], head.y + dy[direction]));
 			} else { // Snake moves in direction
 				taken[snakeParts.get(tailIndex).x][snakeParts.get(tailIndex).y] = false;
 				snakeParts.get(tailIndex).x = head.x + dx[direction];
@@ -365,7 +379,7 @@ public class Game {
 			} else {
 				tailIndex++;
 			}
-			taken[head.x][head.y] = true;
+
 		}
 
 		void draw(Graphics g) { // Draw snake
@@ -394,14 +408,14 @@ public class Game {
 		void eaten() { // Set food position to where the snake is not
 			lastFoodStep = scoreMove;
 			boolean loop = true;
-			taken[snake.snakeParts.get(snake.headIndex).x][snake.snakeParts.get(snake.headIndex).y] = true;
+			taken[snake.snakeParts.get(snake.tailIndex).x][snake.snakeParts.get(snake.tailIndex).y] = true;
 			while (loop) {
 				this.x = rand.nextInt(X);
 				this.y = rand.nextInt(Y);
 				if (!taken[this.x][this.y])
 					loop = false;
 			}
-			taken[snake.snakeParts.get(snake.headIndex).x][snake.snakeParts.get(snake.headIndex).y] = false;
+			taken[snake.snakeParts.get(snake.tailIndex).x][snake.snakeParts.get(snake.tailIndex).y] = false;
 		}
 
 	}
